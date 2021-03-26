@@ -1,19 +1,36 @@
 <div id="single-banner-container">
   <h2>
-    Banner do site
+    Banners do site
   </h2>
-  <div class="row">
-    <div class="col-12">
-      <a href="#" class="upload-attachment">
-        <?= has_single_banner() ? get_single_banner() : 'Escolher banner' ?>
-      </a>
+  <?php if ( count( get_single_banner_slugs() ) ): ?>
+    <div class="row">
+      <?php foreach( get_single_banner_slugs() as $slug ): ?>
+        <div class="col-6">
+          <div class="card">
+            <div class="card-title">
+              <?= get_single_banner_area_label( $slug ) ?>
+            </div>
+            <?php if ( has_single_banner( $slug ) ): ?>
+              <a href="#" class="upload-attachment card-img-top" id="image-container-<?=$slug?>" data-area="<?=$slug?>">
+                <img src="<?=get_single_banner_src( $slug )?>" class="card-img-top">
+              </a>
+            <?php else: ?>
+              <a href="#" class="upload-attachment" data-area="<?=$slug?>" id="image-container-<?=$slug?>"></a>
+            <?php endif; ?>
+            <div class="card-body">
+              <div class="card-text">
+                <?= get_single_banner_area_description( $slug ) ?>
+              </div>
+              <a href="#" class="card-link upload-attachment" data-area="<?=$slug?>">Escolher banner</a>
+              <a href="#" class="card-link remove-attachment <?= has_single_banner( $slug ) ? '': 'd-none' ?>" data-area="<?=$slug?>">Remover banner</a>
+            </div>
+          </div>
+        </div>
+      <?php endforeach; ?>
     </div>
-  </div>
-  <div class="row">
-    <div class="col-12">
-      <a href="#" class="remove-attachment <?= has_single_banner() ? '' : 'd-none' ?>">Remove image</a>
-    </div>
-  </div>
+  <?php else: ?>
+    <h5>Nenhuma área disponivel</h5>
+  <?php endif; ?>
 </div>
 
 <script>
@@ -32,16 +49,21 @@
         } )
         .on( 'select', function() {
           var attachment = custom_uploader.state().get( 'selection' ).first().toJSON()
-          button.html( '<img src="' + attachment.url + '">' )
-            .next().val( attachment.id ).next().show()
+          var area = button.data( 'area' )
+
+          $( '#image-container-' + area )
+            .html( '<img src="' + attachment.url + '" class="card-img-top">' )
+
           $( '.remove-attachment' ).removeClass( 'd-none' )
+
           $.ajax( {
             url: single_banner_utils.wp_action_url,
             type: 'POST',
             data: {
               nonce: single_banner_utils.nonce,
               action: 'update_single_banner',
-              'image-id': attachment.id
+              'image-id': attachment.id,
+              area: area
             }
           } )
 
@@ -51,19 +73,20 @@
 
     $( 'body' ).on( 'click', '.remove-attachment', function( e ) {
 
-      $( '.upload-attachment' ).html( 'Escolher banner' )
-
       e.preventDefault()
 
-      var button = $( this )
-      button.addClass( 'd-none' )
+      var button = $( this ).addClass( 'd-none' )
+      var area = button.data( 'area' )
+
+      $( '#image-container-' + area ).html( '' )
 
       $.ajax( {
         url: single_banner_utils.wp_action_url,
-        yype: 'POST',
+        type: 'POST',
         data: {
           nonce: single_banner_utils.nonce,
-          action: 'remove_single_banner'
+          action: 'remove_single_banner',
+          area: area
         }
       } )
     } )
